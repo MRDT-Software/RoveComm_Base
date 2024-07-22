@@ -49,7 +49,7 @@ jobs:
         cd ${{ matrix.name }}
         git submodule update --init --recursive
         cd ${{ matrix.path }}
-        git pull origin main
+        git pull origin ${{ matrix.branch }}
         cd -
         git add ${{ matrix.path }}
         git commit -m "${{ steps.commit_msg.outputs.msg }}"
