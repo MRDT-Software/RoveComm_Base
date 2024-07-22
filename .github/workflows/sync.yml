@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   
 jobs:
-  update-repos:
+  sync-repos:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,6 +39,10 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+    - name: Get current commit SHA
+      id: get_sha
+      run: echo "::set-output name=sha::$(git rev-parse HEAD)"
+
     - name: Generate commit message
       id: commit_msg
       run: echo "::set-output name=msg::Update due to changes in rovecomm_base"
@@ -49,12 +53,12 @@ jobs:
         cd ${{ matrix.name }}
         git submodule update --init --recursive
         cd ${{ matrix.path }}
-        git pull origin ${{ matrix.branch }}
+        git checkout ${{ steps.get_sha.outputs.sha }}
         cd -
         git add ${{ matrix.path }}
         git commit -m "${{ steps.commit_msg.outputs.msg }}"
-        git checkout -b update-from-rovecomm-base
-        git push origin update-from-rovecomm-base
+        git checkout -b sync/${{ steps.get_sha.outputs.sha }}
+        git push origin sync/${{ steps.get_sha.outputs.sha }}
 
     - name: Create pull request for ${{ matrix.name }}
       uses: peter-evans/create-pull-request@v4
@@ -62,6 +66,6 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         repository: mrdt-software/${{ matrix.name }}
         base: ${{ matrix.branch }}
-        head: update-from-rovecomm-base
-        title: 'Update from rovecomm_base'
+        head: sync/${{ steps.get_sha.outputs.sha }}
+        title: 'Sync Manifest to ${{ steps.get_sha.outputs.sha }}'
         body: 'This is an automated pull request to update the repository due to changes in rovecomm_base.'
