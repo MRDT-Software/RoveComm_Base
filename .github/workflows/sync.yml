@@ -59,6 +59,8 @@ jobs:
         git commit -m "${{ steps.commit_msg.outputs.msg }}"
         git checkout -b sync/${{ steps.get_sha.outputs.sha }}
         git push origin sync/${{ steps.get_sha.outputs.sha }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.ALL_ROVECOMM }}
 
     - name: Create pull request for ${{ matrix.name }}
       uses: peter-evans/create-pull-request@v4
