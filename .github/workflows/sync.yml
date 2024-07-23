@@ -77,8 +77,6 @@ jobs:
 
     - name: Create pull request for ${{ matrix.name }}
       if: success()
-      env:
-        GITHUB_TOKEN: ${{ secrets.ALL_ROVECOMM }}
       run: |
         REPO_NAME=${{ matrix.name }}
         BRANCH_NAME="sync/${{ steps.get_sha.outputs.short_sha }}"
