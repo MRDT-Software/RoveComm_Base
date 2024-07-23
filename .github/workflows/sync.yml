@@ -38,6 +38,8 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git config --global credential.helper 'store --file=.git/credentials'
+        echo "https://${{ secrets.ALL_ROVECOMM }}@github.com" > .git/credentials
 
     - name: Get current commit SHA
       id: get_sha
@@ -59,8 +61,6 @@ jobs:
         git commit -m "${{ steps.commit_msg.outputs.msg }}"
         git checkout -b sync/${{ steps.get_sha.outputs.sha }}
         git push origin sync/${{ steps.get_sha.outputs.sha }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.ALL_ROVECOMM }}
 
     - name: Create pull request for ${{ matrix.name }}
       uses: peter-evans/create-pull-request@v4
