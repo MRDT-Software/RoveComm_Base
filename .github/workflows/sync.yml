@@ -49,7 +49,7 @@ jobs:
 
     - name: Generate commit message
       id: commit_msg
-      run: echo "::set-output name=msg::Update due to changes in rovecomm_base"
+      run: echo "::set-output name=msg::Update due to changes in RoveComm Manifest"
 
     - name: Clone and update submodule for ${{ matrix.name }}
       run: |
