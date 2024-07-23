@@ -43,7 +43,9 @@ jobs:
 
     - name: Get current commit SHA
       id: get_sha
-      run: echo "::set-output name=sha::$(git rev-parse HEAD)"
+      run: |
+        echo "::set-output name=sha::$(git rev-parse HEAD)"
+        echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
 
     - name: Generate commit message
       id: commit_msg
@@ -59,15 +61,34 @@ jobs:
         cd -
         git add ${{ matrix.path }}
         git commit -m "${{ steps.commit_msg.outputs.msg }}"
-        git checkout -b sync/${{ steps.get_sha.outputs.sha }}
-        git push origin sync/${{ steps.get_sha.outputs.sha }}
+        git checkout -b sync/${{ steps.get_sha.outputs.short_sha }}
+        git push origin sync/${{ steps.get_sha.outputs.short_sha }}
+
+    - name: Install GitHub CLI
+      run: |
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+        sudo apt-add-repository https://cli.github.com/packages
+        sudo apt update
+        sudo apt install gh
 
     - name: Create pull request for ${{ matrix.name }}
-      uses: peter-evans/create-pull-request@v6
-      with:
-        token: ${{ secrets.ALL_ROVECOMM }}
-        repository: mrdt-software/${{ matrix.name }}
-        base: ${{ matrix.branch }}
-        head: sync/${{ steps.get_sha.outputs.sha }}
-        title: 'Sync Manifest to ${{ steps.get_sha.outputs.sha }}'
-        body: 'This is an automated pull request to update the repository due to changes in rovecomm_base.'
+      env:
+       GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      run: |
+        REPO_NAME=${{ matrix.name }}
+        BRANCH_NAME="sync/${{ steps.get_sha.outputs.short_sha }}"
+        BASE_BRANCH=${{ matrix.branch }}
+        COMMIT_SHA=${{ steps.get_sha.outputs.sha }}
+        COMMIT_SHORT=${{ steps.get_sha.outputs.short_sha }}
+        COMMIT_URL="https://github.com/MRDT-Software/RoveComm_Base/commit/$COMMIT_SHA"
+
+        # Authorize GitHub CLI with the PAT
+        echo "${{ secrets.ALL_ROVECOMM }}" | gh auth login --with-token
+
+        # Create the pull request
+        gh pr create \
+          --repo missourimrdt/$REPO_NAME \
+          --head $BRANCH_NAME \
+          --base $BASE_BRANCH \
+          --title "Sync Manifest to $COMMIT_SHORT" \
+          --body "This is an automated pull request to update the repository due to changes in the rovecomm manifest at commit $COMMIT_URL."
